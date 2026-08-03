@@ -1,0 +1,22 @@
+services:
+  web:
+    build: .
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+      DATA_DIR: /data
+      AGENT_WORKSPACE: /data/workspace
+      CHAT_WORKSPACE: /data/workspace/chat
+      DATABASE_PATH: /data/app.db
+      # 同源托管前端时可不配；若单独域名再填
+      CORS_ORIGIN: http://localhost:3001
+    volumes:
+      - agent-data:/data
+    restart: unless-stopped
+
+volumes:
+  agent-data:

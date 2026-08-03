@@ -1,0 +1,25 @@
+{
+  "name": "cursor-agent-web",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev:server": "npm run dev --workspace=@cursor-agent-web/server",
+    "dev:web": "npm run dev --workspace=@cursor-agent-web/web",
+    "dev": "npm run dev:server",
+    "build": "npm run build --workspace=@cursor-agent-web/web",
+    "start": "npm run start --workspace=@cursor-agent-web/server",
+    "test": "npm run test --workspace=@cursor-agent-web/server",
+    "env:check": "npm run env:check --workspace=@cursor-agent-web/server",
+    "sdk:smoke": "npm run sdk:smoke --workspace=@cursor-agent-web/server"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}
