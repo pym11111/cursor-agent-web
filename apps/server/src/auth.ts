@@ -7,7 +7,8 @@ function hash(value: string): string {
 }
 
 export function issueSessionToken(password: string): string {
-  return hash(`${password}:${appConfig.apiKey.slice(0, 8)}`);
+  const pepper = appConfig.apiKey.slice(0, 8) || "no-api-key";
+  return hash(`${password}:${pepper}`);
 }
 
 export function isAuthed(req: Request): boolean {

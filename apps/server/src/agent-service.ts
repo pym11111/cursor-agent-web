@@ -1,15 +1,14 @@
-import { Agent, CursorAgentError } from "@cursor/sdk";
 import type { Response } from "express";
 import type { ChatMode } from "@cursor-agent-web/shared";
-import { appConfig } from "./config.js";
+import { appConfig, assertApiReady } from "./config.js";
 import { sendSse } from "./sse.js";
 
 const chatPrefix =
   "你是对话助手。只回答用户问题，不要创建、修改或删除任何文件，不要执行命令。\n\n用户：";
 
-type SdkAgent = Awaited<ReturnType<typeof Agent.create>>;
+type SdkModule = typeof import("@cursor/sdk");
+type SdkAgent = Awaited<ReturnType<SdkModule["Agent"]["create"]>>;
 
-/** local Agent 在 dispose 后无法可靠 resume；进程内保活以支持多轮 */
 const liveAgents = new Map<string, SdkAgent>();
 
 export type StreamResult = {
@@ -19,10 +18,16 @@ export type StreamResult = {
   ok: boolean;
 };
 
+async function loadSdk(): Promise<SdkModule> {
+  return import("@cursor/sdk");
+}
+
 async function acquireAgent(options: {
   agentId?: string;
   cwd: string;
 }): Promise<{ agent: SdkAgent; resumed: boolean }> {
+  assertApiReady();
+  const { Agent } = await loadSdk();
   const { agentId, cwd } = options;
 
   if (agentId && liveAgents.has(agentId)) {
@@ -36,7 +41,6 @@ async function acquireAgent(options: {
       return { agent, resumed: true };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      // 常见：上一轮 dispose / 服务热重启后本地 agent 已失效
       if (!/not found/i.test(msg)) throw err;
       console.warn(`[agent] resume 失败，新建 Agent: ${msg}`);
     }
@@ -66,7 +70,6 @@ export async function streamAgentReply(options: {
 
   try {
     const { agent } = await acquireAgent({ agentId, cwd });
-
     const run = await agent.send(prompt);
     sendSse(res, {
       type: "meta",
@@ -101,7 +104,10 @@ export async function streamAgentReply(options: {
       assistantText,
     };
   } catch (err) {
-    if (err instanceof CursorAgentError) {
+    const { CursorAgentError } = await loadSdk().catch(() => ({
+      CursorAgentError: undefined,
+    }));
+    if (CursorAgentError && err instanceof CursorAgentError) {
       sendSse(res, {
         type: "error",
         message: err.message,

@@ -23,9 +23,12 @@ import "./db.js";
 export const router = Router();
 
 router.get("/health", (_req, res) => {
-  res.json({
+  res.status(200).json({
     ok: true,
     model: appConfig.modelId,
+    hasApiKey: Boolean(appConfig.apiKey),
+    hasPassword: Boolean(appConfig.appPassword),
+    port: appConfig.port,
     limits: {
       dailyRunLimit: appConfig.dailyRunLimit,
       dailyMessageLimit: appConfig.dailyMessageLimit,

@@ -6,11 +6,9 @@ import { mkdirSync } from "node:fs";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 config({ path: resolve(root, ".env") });
 
-function requireEnv(name: string): string {
+function optionalEnv(name: string): string | undefined {
   const value = process.env[name];
-  if (!value || value.includes("...")) {
-    throw new Error(`缺少环境变量 ${name}，请检查根目录 .env`);
-  }
+  if (!value || value.includes("...")) return undefined;
   return value;
 }
 
@@ -39,15 +37,25 @@ mkdirSync(dirname(databasePath), { recursive: true });
 mkdirSync(chatWorkspace, { recursive: true });
 
 const isProd = process.env.NODE_ENV === "production";
+const apiKey = optionalEnv("CURSOR_API_KEY");
+const appPassword = optionalEnv("APP_PASSWORD");
+
+if (!apiKey) {
+  console.warn("[config] 缺少 CURSOR_API_KEY：服务可启动，但对话不可用");
+}
+if (!appPassword) {
+  console.warn("[config] 缺少 APP_PASSWORD：登录将失败");
+}
 
 export const appConfig = {
   root,
   dataDir,
   databasePath,
   isProd,
-  port: Number(process.env.PORT ?? 3001),
-  apiKey: requireEnv("CURSOR_API_KEY"),
-  appPassword: requireEnv("APP_PASSWORD"),
+  // Railway 会注入 PORT；务必使用该端口做健康检查
+  port: Number(process.env.PORT || 3001),
+  apiKey: apiKey ?? "",
+  appPassword: appPassword ?? "",
   modelId: process.env.MODEL_ID || "composer-2.5",
   workspace,
   chatWorkspace,
@@ -63,3 +71,12 @@ export const appConfig = {
     .map((s) => s.trim())
     .filter(Boolean),
 };
+
+export function assertApiReady() {
+  if (!appConfig.apiKey) {
+    throw new Error("缺少环境变量 CURSOR_API_KEY");
+  }
+  if (!appConfig.appPassword) {
+    throw new Error("缺少环境变量 APP_PASSWORD");
+  }
+}
