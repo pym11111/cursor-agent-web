@@ -35,8 +35,9 @@ if (existsSync(webDist)) {
   console.log(`已托管前端静态资源: ${webDist}`);
 }
 
-app.listen(appConfig.port, () => {
-  console.log(`服务已启动: http://localhost:${appConfig.port}`);
+// Railway 等平台要求监听 0.0.0.0，否则健康检查会失败
+app.listen(appConfig.port, "0.0.0.0", () => {
+  console.log(`服务已启动: 0.0.0.0:${appConfig.port}`);
   console.log(`健康检查: GET /api/health`);
   console.log(`dataDir: ${appConfig.dataDir}`);
   console.log(`workspace: ${appConfig.workspace}`);
