@@ -33,9 +33,8 @@ COPY --from=build /app/apps/web/dist ./apps/web/dist
 RUN mkdir -p /data/workspace/chat
 
 EXPOSE 3001
-VOLUME ["/data"]
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=45s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3001)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+# Railway 不支持 Dockerfile 的 VOLUME 指令；持久化请在面板挂载 Volume 到 /data
+# 健康检查用 railway.toml 的 healthcheckPath
 
 CMD ["npx", "tsx", "apps/server/src/index.ts"]
